@@ -1,0 +1,56 @@
+- name: install apt dependencies
+  become: true
+  ansible.builtin.package:
+    name: ["git", "python3", "python3-pip"]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: install poetry
+  become: true
+  become_user: "{{ ansible_user }}"
+  ansible.builtin.shell:
+    cmd: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -
+
+- name: git checkout
+  become: true
+  become_user: "{{ ansible_user }}"
+  ansible.builtin.git:
+    repo: "https://github.com/Str4ngeb0yz/DestructiveFarm.git"
+    dest: "{{ destructivefarm_path }}"
+    version: main
+    force: true
+
+- name: install python dependencies
+  become: true
+  become_user: "{{ ansible_user }}"
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.poetry/bin:{{ ansible_env.PATH }}"
+  ansible.builtin.shell:
+    chdir: "{{ destructivefarm_path }}"
+    cmd: poetry install
+
+- name: remove flags.sqlite if exists
+  ansible.builtin.file:
+    path: "{{ destructivefarm_path }}/server/flags.sqlite"
+    state: absent
+
+- name: create systemd user unit dir
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/systemd/user/"
+    state: directory
+    mode: "0755"
+
+- name: create destructivefarm systemd unit
+  become: true
+  ansible.builtin.template:
+    mode: "0644"
+    src: DestructiveFarmServer.service
+    dest: "{{ ansible_env.HOME }}/.config/systemd/user/destructivefarm.service"
+
+- name: start destructivefarm service
+  ansible.builtin.systemd:
+    scope: user
+    daemon_reload: true
+    unit: destructivefarm
+    state: restarted

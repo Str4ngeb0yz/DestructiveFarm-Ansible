@@ -1,0 +1,16 @@
+[Unit]
+Description=DestructiveFarm
+After=syslog.target
+After=network.target
+
+[Service]
+Type=simple
+User={{ ansible_user }}
+Group={{ ansible_user }}
+Environment="PATH={{ ansible_env.HOME }}/.poetry/bin:{{ ansible_env.PATH }}"
+WorkingDirectory={{ destructivefarm_path }}/server/
+ExecStart={{ destructivefarm_path }}/server/start_server.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

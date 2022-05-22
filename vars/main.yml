@@ -1,0 +1,1 @@
+destructivefarm_path: "{{ ansible_env.HOME }}/destructivefarm"
